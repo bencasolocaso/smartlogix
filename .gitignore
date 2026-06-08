@@ -1,0 +1,26 @@
+# Secrets
+.env
+.env.local
+.env.production
+*.env
+application-local.yml
+application-prod.yml
+
+# Compilados
+target/
+dist/
+node_modules/
+*.class
+*.jar
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Mac
+.DS_Store
+
+# Logs
+*.log
