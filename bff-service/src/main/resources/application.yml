@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: bff-service
+
+server:
+  port: ${BFF_PORT:8084}
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 5s
+        failureRateThreshold: 50
+    instances:
+      inventoryService:
+        baseConfig: default
+      orderService:
+        baseConfig: default
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 1s
+    instances:
+      inventoryService:
+        baseConfig: default
+      orderService:
+        baseConfig: default
+
+INVENTORY_SERVICE_URL: ${INVENTORY_URL:http://localhost:8081}
+ORDER_SERVICE_URL: ${ORDER_URL:http://localhost:8082}
