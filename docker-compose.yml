@@ -1,0 +1,152 @@
+version: '3.8'
+
+services:
+  # Databases
+  inventory-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: inventory
+      POSTGRES_USER: inventory_user
+      POSTGRES_PASSWORD: inventory_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - inventory_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inventory_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartlogix-net
+
+  orders-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: orders
+      POSTGRES_USER: orders_user
+      POSTGRES_PASSWORD: orders_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - orders_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orders_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartlogix-net
+
+  shipping-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: shipping
+      POSTGRES_USER: shipping_user
+      POSTGRES_PASSWORD: shipping_pass
+    ports:
+      - "5434:5432"
+    volumes:
+      - shipping_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shipping_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartlogix-net
+
+  # Backend Services
+  inventory-service:
+    build: ./inventory-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://inventory-db:5432/inventory
+      SPRING_DATASOURCE_USERNAME: inventory_user
+      SPRING_DATASOURCE_PASSWORD: inventory_pass
+      SERVER_PORT: 8081
+    depends_on:
+      inventory-db:
+        condition: service_healthy
+    networks:
+      - smartlogix-net
+
+  order-service:
+    build: ./order-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://orders-db:5432/orders
+      SPRING_DATASOURCE_USERNAME: orders_user
+      SPRING_DATASOURCE_PASSWORD: orders_pass
+      SERVER_PORT: 8082
+      INVENTORY_SERVICE_URL: http://inventory-service:8081
+    depends_on:
+      orders-db:
+        condition: service_healthy
+    networks:
+      - smartlogix-net
+
+  shipping-service:
+    build: ./shipping-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://shipping-db:5432/shipping
+      SPRING_DATASOURCE_USERNAME: shipping_user
+      SPRING_DATASOURCE_PASSWORD: shipping_pass
+      SERVER_PORT: 8083
+    depends_on:
+      shipping-db:
+        condition: service_healthy
+    networks:
+      - smartlogix-net
+
+  bff-service:
+    build: ./bff-service
+    ports:
+      - "8084:8084"
+    environment:
+      SERVER_PORT: 8084
+    depends_on:
+      - inventory-service
+      - order-service
+      - shipping-service
+    networks:
+      - smartlogix-net
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "9080:8080"
+    environment:
+      SERVER_PORT: 8080
+    depends_on:
+      - bff-service
+    networks:
+      - smartlogix-net
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - VITE_API_BASE_URL=http://localhost:9080
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:9080
+    depends_on:
+      - api-gateway
+    networks:
+      - smartlogix-net
+
+volumes:
+  inventory_data:
+  orders_data:
+  shipping_data:
+
+networks:
+  smartlogix-net:
+    driver: bridge

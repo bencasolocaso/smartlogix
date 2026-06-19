@@ -2,9 +2,9 @@ spring:
   application:
     name: inventory-service
   datasource:
-    url: ${DB_INVENTORY_URL:jdbc:postgresql://localhost:5432/inventory_db}
-    username: ${DB_INVENTORY_USER:postgres}
-    password: ${DB_INVENTORY_PASS:postgres}
+    url: jdbc:postgresql://inventory-db:5432/inventory
+    username: inventory_user
+    password: inventory_pass
   jpa:
     hibernate:
       ddl-auto: update
@@ -13,4 +13,4 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
 server:
-  port: ${INVENTORY_PORT:8081}
+  port: 8081

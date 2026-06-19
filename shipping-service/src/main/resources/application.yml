@@ -5,9 +5,9 @@ spring:
   application:
     name: shipping-service
   datasource:
-    url: ${DB_SHIPPING_URL}
-    username: ${DB_SHIPPING_USER}
-    password: ${DB_SHIPPING_PASS}
+    url: jdbc:postgresql://shipping-db:5432/shipping
+    username: shipping_user
+    password: shipping_pass
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

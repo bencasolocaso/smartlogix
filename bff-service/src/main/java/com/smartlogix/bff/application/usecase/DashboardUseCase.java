@@ -5,13 +5,10 @@ import com.smartlogix.bff.application.dto.OrderDTO;
 import com.smartlogix.bff.application.dto.ProductDTO;
 import com.smartlogix.bff.infrastructure.client.InventoryClient;
 import com.smartlogix.bff.infrastructure.client.OrderClient;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @Service
 public class DashboardUseCase {
@@ -25,8 +22,8 @@ public class DashboardUseCase {
     }
 
     public DashboardDTO getDashboardData() {
-        DashboardResult inventoryResult = getInventoryData();
-        DashboardOrderResult orderResult = getOrderData();
+        DashboardResult inventoryResult = getInventoryDataWithFallback();
+        DashboardOrderResult orderResult = getOrderDataWithFallback();
 
         return new DashboardDTO(
                 inventoryResult.products(),
@@ -36,24 +33,22 @@ public class DashboardUseCase {
         );
     }
 
-    @CircuitBreaker(name = "inventoryService", fallbackMethod = "inventoryFallback")
-    @Retry(name = "inventoryService")
-    public DashboardResult getInventoryData() {
-        return new DashboardResult(inventoryClient.getAllProducts(), false);
+    private DashboardResult getInventoryDataWithFallback() {
+        try {
+            return new DashboardResult(inventoryClient.getAllProducts(), false);
+        } catch (Exception e) {
+            System.err.println("Fallback triggered for inventory: " + e.getMessage());
+            return new DashboardResult(Collections.emptyList(), true);
+        }
     }
 
-    public DashboardResult inventoryFallback(Exception e) {
-        return new DashboardResult(Collections.emptyList(), true);
-    }
-
-    @CircuitBreaker(name = "orderService", fallbackMethod = "orderFallback")
-    @Retry(name = "orderService")
-    public DashboardOrderResult getOrderData() {
-        return new DashboardOrderResult(orderClient.getRecentOrders(), false);
-    }
-
-    public DashboardOrderResult orderFallback(Exception e) {
-        return new DashboardOrderResult(Collections.emptyList(), true);
+    private DashboardOrderResult getOrderDataWithFallback() {
+        try {
+            return new DashboardOrderResult(orderClient.getRecentOrders(), false);
+        } catch (Exception e) {
+            System.err.println("Fallback triggered for order: " + e.getMessage());
+            return new DashboardOrderResult(Collections.emptyList(), true);
+        }
     }
 
     private record DashboardResult(List<ProductDTO> products, boolean degraded) {}

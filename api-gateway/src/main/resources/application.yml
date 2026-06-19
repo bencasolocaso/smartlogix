@@ -3,11 +3,12 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-      routes:
-        - id: bff-service
-          uri: ${BFF_URL:http://localhost:8084}
+      mvc:
+        routes[0]:
+          id: bff-service
+          uri: http://bff-service:8084
           predicates:
-            - Path=/api/**
+            - Path=/api/bff/**
 
 server:
-  port: ${API_GATEWAY_PORT:8080}
+  port: 8080

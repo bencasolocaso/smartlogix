@@ -3,7 +3,7 @@ spring:
     name: bff-service
 
 server:
-  port: ${BFF_PORT:8084}
+  port: 8084
 
 resilience4j:
   circuitbreaker:
@@ -32,5 +32,5 @@ resilience4j:
       orderService:
         baseConfig: default
 
-INVENTORY_SERVICE_URL: ${INVENTORY_URL:http://localhost:8081}
-ORDER_SERVICE_URL: ${ORDER_URL:http://localhost:8082}
+INVENTORY_SERVICE_URL: http://inventory-service:8081
+ORDER_SERVICE_URL: http://order-service:8082
